@@ -81,6 +81,7 @@
     color:var(--accent);
   }
   .chip:active{ transform:scale(0.97); }
+  .chip.full{ flex:1 1 100%; }
 
   .field{ margin-bottom:14px; }
   .field:last-child{ margin-bottom:0; }
@@ -168,6 +169,12 @@
     border:1px solid rgba(255,90,31,0.3);
   }
 
+  .info-box{
+    font-size:12.5px; color:var(--text-muted); line-height:1.6;
+    background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06);
+    border-radius:12px; padding:12px 14px; margin-bottom:12px;
+  }
+
   .report-box{
     background:#050505; border:1px solid rgba(255,255,255,0.08);
     border-radius:14px; padding:14px; font-size:12.5px;
@@ -227,23 +234,36 @@ const STORAGE_KEY = "gerenciador-encerramento-data";
 // ---------- catálogo de tipos ----------
 const GRUPOS = {
   "Instalação": { subtipos:["PF","PJ","B2B","Condomínio"], subtipoLabel:"Tipo de cliente", caixa:true, servico:{mode:"fixo", texto:"Instalação Fibra"}, produtos:true, patrimoniosUtilizados:true, patrimoniosRecolhidos:false, patrimoniosTrocados:false, faturamento:true },
-  "Instalação Repetidor": { subtipos:["2.0","3.0","4.0"], subtipoLabel:"Versão do repetidor", caixa:false, servico:{mode:"fixo", texto:"Instalação de Repetidor"}, produtos:true, patrimoniosUtilizados:true, patrimoniosRecolhidos:false, patrimoniosTrocados:false, faturamento:true },
-  "Reativação": { subtipos:["PF","PJ","B2B","Condomínio"], subtipoLabel:"Tipo de cliente", caixa:true, servico:{mode:"fixo", texto:"Instalação Fibra"}, produtos:true, patrimoniosUtilizados:true, patrimoniosRecolhidos:false, patrimoniosTrocados:false, faturamento:true },
+  "Instalação Repetidor": { subtipos:["2.0","3.0","4.0"], subtipoLabel:"Versão do repetidor", caixa:false, servico:{mode:"fixo", texto:"Instalação de Repetidor"}, produtos:true, patrimoniosUtilizados:true, patrimoniosRecolhidos:false, patrimoniosTrocados:false, faturamento:"repetidor" },
+  "Reativação": { subtipos:["PF","PJ","B2B","Condomínio"], subtipoLabel:"Tipo de cliente", caixa:true, servico:{mode:"fixo", texto:"Reativação de Cliente"}, produtos:true, patrimoniosUtilizados:false, patrimoniosRecolhidos:false, patrimoniosTrocados:false, faturamento:true },
   "Serviço": { subtipos:["PF","PJ","B2B","Condomínio"], subtipoLabel:"Tipo de cliente", caixa:true, servico:{mode:"livre"}, produtos:true, patrimoniosUtilizados:true, patrimoniosRecolhidos:false, patrimoniosTrocados:false, faturamento:true },
   "Transferência": { subtipos:["PF","PJ","B2B","Condomínio"], subtipoLabel:"Tipo de cliente", caixa:true, servico:{mode:"fixo", texto:"Transferência de Endereço"}, produtos:true, patrimoniosUtilizados:true, patrimoniosRecolhidos:false, patrimoniosTrocados:false, faturamento:true },
-  "Troca de Roteador": { subtipos:["PF","PJ","B2B","Condomínio"], subtipoLabel:"Tipo de cliente", caixa:true, servico:{mode:"fixo", texto:"Troca de Roteador"}, produtos:true, patrimoniosUtilizados:true, patrimoniosRecolhidos:true, patrimoniosTrocados:false, faturamento:true },
-  "Upgrade": { subtipos:["PF","PJ","B2B","Condomínio"], subtipoLabel:"Tipo de cliente", caixa:true, servico:{mode:"fixo", texto:"Upgrade de Plano"}, produtos:true, patrimoniosUtilizados:true, patrimoniosRecolhidos:true, patrimoniosTrocados:false, faturamento:true },
-  "Retrabalho de Instalação": { subtipos:["PF","PJ","B2B","Condomínio"], subtipoLabel:"Tipo de cliente", caixa:true, servico:{mode:"fixo", texto:"Instalação Fibra"}, produtos:true, patrimoniosUtilizados:true, patrimoniosRecolhidos:false, patrimoniosTrocados:false, faturamento:true },
+  "Troca de Roteador": { subtipos:["PF","PJ","B2B","Condomínio"], subtipoLabel:"Tipo de cliente", caixa:true, caixaRequiredFields:["potencia"], servico:{mode:"fixo", texto:"Troca de Roteador"}, produtos:true, patrimoniosUtilizados:true, patrimoniosRecolhidos:true, patrimoniosTrocados:false, faturamento:true },
+  "Upgrade": { subtipos:["PF","PJ","B2B","Condomínio"], subtipoLabel:"Tipo de cliente", caixa:true, caixaRequiredFields:["potencia"], servico:{mode:"fixo", texto:"Upgrade de Plano"}, produtos:true, patrimoniosUtilizados:true, patrimoniosRecolhidos:true, patrimoniosTrocados:false, faturamento:true },
+  "Retrabalho de Instalação": { subtipos:["PF","PJ","B2B","Condomínio"], subtipoLabel:"Tipo de cliente", caixa:true, servico:{mode:"livre"}, produtos:true, patrimoniosUtilizados:true, patrimoniosRecolhidos:false, patrimoniosTrocados:false, faturamento:true },
   "Retrabalho de Pendência": { subtipos:["PF","PJ","B2B","Condomínio"], subtipoLabel:"Tipo de cliente", caixa:true, servico:{mode:"livre"}, produtos:true, patrimoniosUtilizados:true, patrimoniosRecolhidos:false, patrimoniosTrocados:false, faturamento:true },
   "Equipamento Recolhido": { subtipos:null, subtipoLabel:"", caixa:false, servico:{mode:"fixo", texto:"Recolhimento de Equipamento"}, produtos:false, patrimoniosUtilizados:false, patrimoniosRecolhidos:true, patrimoniosTrocados:false, faturamento:false },
-  "Teste de Velocidade": { subtipos:["PF","PJ","B2B","Condomínio"], subtipoLabel:"Tipo de cliente", caixa:false, servico:{mode:"livre"}, produtos:true, patrimoniosUtilizados:true, patrimoniosRecolhidos:false, patrimoniosTrocados:true, faturamento:false },
-  "Pendência Fibra": { subtipos:["PF","PJ","B2B","Condomínio"], subtipoLabel:"Tipo de cliente", caixa:true, servico:{mode:"livre"}, produtos:true, patrimoniosUtilizados:true, patrimoniosRecolhidos:false, patrimoniosTrocados:false, faturamento:true }
+  "Teste de Velocidade": { subtipos:["PF","PJ","B2B","Condomínio"], subtipoLabel:"Tipo de cliente", caixa:false, servico:{mode:"teste_velocidade"}, produtos:true, patrimoniosUtilizados:true, patrimoniosRecolhidos:false, patrimoniosTrocados:true, faturamento:false },
+  "Pendência Fibra": { subtipos:["PF","PJ","B2B","Condomínio"], subtipoLabel:"Tipo de cliente", caixa:true, servico:{mode:"livre"}, produtos:true, patrimoniosUtilizados:true, patrimoniosRecolhidos:false, patrimoniosTrocados:false, faturamento:true },
+  "Realocação de Equipamento": { subtipos:["PF","PJ","B2B","Condomínio"], subtipoLabel:"Tipo de cliente", caixa:true, servico:{mode:"single_select", opcoes:["Realocação sem troca de Drop","Realocação com troca de Drop"]}, produtos:true, patrimoniosUtilizados:true, patrimoniosRecolhidos:false, patrimoniosTrocados:false, faturamento:true }
 };
 
 const PRODUTOS_LIST = ["Conector Azul","Conector Verde","Conecto RJ45","Fixa Fio","Esticador F.E","Cabo de Rede","Cabo Drop","Adesivo Conector","Fonte 12v","Canaleta PVC"];
 const CABO_PRODUTOS = ["Cabo de Rede","Cabo Drop"];
 
 const PATRIMONIOS_LIST = ["ONT ZTE V1","ONT ZTE V9","ONT GLOBAL 4 ANTENAS","ONT GLOBAL WI-FI 6","ONT T-LINK","ONT INTELBRAS","ONU APC","ONU MINI","ROTEADOR MERCUSYS 4 ANTENAS","ROTEADOR T-LINK 2 ANTENAS","ROTEADOR T-LINK 3 ANTENAS","ROTEADOR TENDA F3"];
+
+const PLANOS_TESTE_VELOCIDADE = ["100 Mbps","200 Mbps","300 Mbps","400 Mbps","500 Mbps","600 Mbps","700 Mbps"];
+const EM_SERVICO_OPCOES = ["Teste de Velocidade","Alteração de Largura de Banda","Mudança de Canal","Configuração de Servidores NTP","Reset e Configuração de Equipamento"];
+
+// grupos que exigem alerta de faturamento antes de gerar o relatório
+const GRUPOS_ALERTA_FATURAMENTO = ["Troca de Roteador","Serviço","Transferência","Instalação Repetidor"];
+const ALERTA_FATURAMENTO_MSG = "Atenção! Verifique se esta Ordem de Serviço possui algum faturamento pendente antes de finalizá-la.";
+
+// franquia de material da Instalação Repetidor 4.0
+const FRANQUIA_REPETIDOR_4_0 = { metrosCabo: 30, qtdRJ45: 2 };
+const VALOR_METRO_CABO_EXCEDENTE = 2;
+const VALOR_RJ45_EXCEDENTE = 2;
 
 function emptyForm(){
   return {
@@ -258,13 +278,21 @@ function emptyForm(){
     porta: "",
     potencia: "",
     servicoLivre: "",
+    servicoEscolha: "",
+    planoCliente: "",
+    velocidadeAtual: "",
+    emServico: [],
     produtos: [],
     patrimoniosUtilizados: [],
     patrimoniosRecolhidos: [],
     patrimoniosTrocados: [],
+    equipamentosResidenciaAtivo: false,
+    equipamentosResidencia: [],
+    equipRecolhidoAtivo: false,
     faturamento: null,
     faturamentoValor: "",
-    faturamentoParcelas: "1"
+    faturamentoParcelas: "1",
+    faturamentoFormaPagamento: null
   };
 }
 
@@ -288,10 +316,44 @@ function formatPotencia(val){
   if(!cleaned) return "";
   return "-" + cleaned;
 }
+function formatVelocidade(val){
+  const digits = String(val ?? "").replace(/[^0-9]/g, "");
+  if(!digits) return "";
+  return `${digits} Mbps`;
+}
 function padNum(n){
   n = parseInt(n, 10);
   if(isNaN(n)) n = 0;
   return String(n).padStart(2, "0");
+}
+function brl(n){
+  return (Math.round(n * 100) / 100).toFixed(2).replace(".", ",");
+}
+function caboTotalMetros(entry){
+  if(!entry) return 0;
+  const ini = parseFloat(String(entry.inicio).replace(",", ".")) || 0;
+  const fim = parseFloat(String(entry.fim).replace(",", ".")) || 0;
+  return Math.round(Math.abs(ini - fim) * 100) / 100;
+}
+function computeFaturamentoRepetidor(subtipo, produtos){
+  const caboEntry = produtos.find(p => p.produto === "Cabo de Rede");
+  const rj45Entry = produtos.find(p => p.produto === "Conecto RJ45");
+  const metrosCabo = caboEntry ? caboTotalMetros(caboEntry) : 0;
+  const qtdRJ45 = rj45Entry ? (parseInt(rj45Entry.qtd, 10) || 0) : 0;
+  let metrosFaturar, rj45Faturar, franquia;
+  if(subtipo === "4.0"){
+    metrosFaturar = Math.max(0, metrosCabo - FRANQUIA_REPETIDOR_4_0.metrosCabo);
+    rj45Faturar = Math.max(0, qtdRJ45 - FRANQUIA_REPETIDOR_4_0.qtdRJ45);
+    franquia = true;
+  } else {
+    metrosFaturar = metrosCabo;
+    rj45Faturar = qtdRJ45;
+    franquia = false;
+  }
+  const valorCabo = metrosFaturar * VALOR_METRO_CABO_EXCEDENTE;
+  const valorRJ45 = rj45Faturar * VALOR_RJ45_EXCEDENTE;
+  const total = Math.round((valorCabo + valorRJ45) * 100) / 100;
+  return { metrosCabo, qtdRJ45, metrosFaturar, rj45Faturar, valorCabo, valorRJ45, total, franquia };
 }
 
 let state = {
@@ -372,16 +434,38 @@ function computeClassificacao(conf, f){
   if(!conf) return "Andamento";
   if(!f.tecnico.trim() || !f.data || !f.cliente.trim() || !f.endereco.trim()) return "Andamento";
   if(conf.subtipos && !f.subtipo) return "Andamento";
-  if(conf.caixa && (!f.caixa.trim() || !f.porta.trim() || !f.potencia.trim())) return "Andamento";
-  if(conf.servico.mode === "livre" && !f.servicoLivre.trim()) return "Andamento";
+
+  if(conf.caixa){
+    const req = conf.caixaRequiredFields || ["caixa","porta","potencia"];
+    const vals = { caixa:f.caixa, porta:f.porta, potencia:f.potencia };
+    if(req.some(k => !vals[k].trim())) return "Andamento";
+  }
+
+  const mode = conf.servico.mode;
+  if(mode === "livre" && !f.servicoLivre.trim()) return "Andamento";
+  if(mode === "single_select" && !f.servicoEscolha) return "Andamento";
+  if(mode === "teste_velocidade"){
+    if(!f.planoCliente || !f.velocidadeAtual || f.emServico.length === 0) return "Andamento";
+  }
+
+  if(f.grupo === "Reativação"){
+    if(f.equipamentosResidenciaAtivo && f.equipamentosResidencia.length === 0) return "Andamento";
+    if(f.equipRecolhidoAtivo && f.patrimoniosUtilizados.length === 0) return "Andamento";
+  }
+
   if(conf.produtos && f.produtos.length === 0) return "Andamento";
   if(conf.patrimoniosUtilizados && f.patrimoniosUtilizados.length === 0) return "Andamento";
   if(conf.patrimoniosRecolhidos && f.patrimoniosRecolhidos.length === 0) return "Andamento";
   if(conf.patrimoniosTrocados && f.patrimoniosTrocados.length === 0) return "Andamento";
-  if(conf.faturamento){
+
+  if(conf.faturamento === "repetidor"){
+    const calc = computeFaturamentoRepetidor(f.subtipo, f.produtos);
+    if(calc.total > 0 && !f.faturamentoFormaPagamento) return "Andamento";
+  } else if(conf.faturamento){
     if(!f.faturamento) return "Andamento";
     if(f.faturamento === "sim" && !f.faturamentoValor.trim()) return "Andamento";
   }
+
   return "Encerramento";
 }
 
@@ -400,14 +484,39 @@ function buildReportText(form){
 
   if(conf.caixa){
     lines.push("");
-    lines.push(`Caixa: ${form.caixa}`);
-    lines.push(`Porta: ${form.porta}`);
-    lines.push(`Potência: ${form.potencia}`);
+    lines.push(`Caixa: ${form.caixa || "-"}`);
+    lines.push(`Porta: ${form.porta || "-"}`);
+    lines.push(`Potência: ${form.potencia || "-"}`);
   }
 
   lines.push("");
-  lines.push("Serviço Realizado:");
-  lines.push(conf.servico.mode === "fixo" ? conf.servico.texto : (form.servicoLivre.trim() || "-"));
+  const mode = conf.servico.mode;
+  if(mode === "fixo"){
+    lines.push("Serviço Realizado:");
+    lines.push(conf.servico.texto);
+  } else if(mode === "livre"){
+    lines.push("Serviço Realizado:");
+    lines.push(form.servicoLivre.trim() || "-");
+  } else if(mode === "single_select"){
+    lines.push("Serviço Realizado:");
+    lines.push(form.servicoEscolha || "-");
+  } else if(mode === "teste_velocidade"){
+    lines.push(`Plano do Cliente: ${form.planoCliente || "-"}`);
+    lines.push(`Velocidade Atual: ${form.velocidadeAtual || "-"}`);
+    lines.push("");
+    lines.push("Em Serviço:");
+    lines.push(form.emServico.length ? form.emServico.map(s => `- ${s}`).join("\n") : "-");
+  }
+
+  if(form.grupo === "Reativação" && form.equipamentosResidenciaAtivo){
+    lines.push("");
+    lines.push("Equipamentos na Residência:");
+    if(form.equipamentosResidencia.length){
+      form.equipamentosResidencia.forEach((r,i) => lines.push(`[${padNum(i+1)}] ${r.modelo || "-"} - ${r.tipo || "-"} - MAC: ${r.mac.trim() || "-"}`));
+    } else {
+      lines.push("-");
+    }
+  }
 
   if(conf.produtos){
     lines.push("");
@@ -415,10 +524,8 @@ function buildReportText(form){
     if(form.produtos.length){
       form.produtos.forEach(p => {
         if(CABO_PRODUTOS.includes(p.produto)){
-          const ini = parseFloat(String(p.inicio).replace(",", ".")) || 0;
-          const fim = parseFloat(String(p.fim).replace(",", ".")) || 0;
-          const total = Math.round(Math.abs(ini - fim) * 100) / 100;
-          lines.push(`[${total}m] ${p.produto} (Início: ${ini}m | Fim: ${fim}m | Total: ${total}m)`);
+          const total = caboTotalMetros(p);
+          lines.push(`[${total}m] ${p.produto} (Início: ${p.inicio || 0}m | Fim: ${p.fim || 0}m | Total: ${total}m)`);
         } else {
           lines.push(`[${padNum(p.qtd)}] ${p.produto}`);
         }
@@ -428,7 +535,8 @@ function buildReportText(form){
     }
   }
 
-  if(conf.patrimoniosUtilizados){
+  const mostrarPatrimoniosUtilizados = conf.patrimoniosUtilizados || (form.grupo === "Reativação" && form.equipRecolhidoAtivo);
+  if(mostrarPatrimoniosUtilizados){
     lines.push("");
     lines.push("Patrimônios Utilizados:");
     if(form.patrimoniosUtilizados.length){
@@ -458,7 +566,19 @@ function buildReportText(form){
     }
   }
 
-  if(conf.faturamento){
+  if(conf.faturamento === "repetidor"){
+    lines.push("");
+    const calc = computeFaturamentoRepetidor(form.subtipo, form.produtos);
+    if(calc.total > 0){
+      const detalhes = [];
+      if(calc.metrosFaturar > 0) detalhes.push(`cabo excedente ${calc.metrosFaturar}m x R$ 2,00 = R$ ${brl(calc.valorCabo)}`);
+      if(calc.rj45Faturar > 0) detalhes.push(`RJ45 excedente ${calc.rj45Faturar}x R$ 2,00 = R$ ${brl(calc.valorRJ45)}`);
+      lines.push(`Faturamento: R$ ${brl(calc.total)}${detalhes.length ? ` (${detalhes.join("; ")})` : ""}`);
+      lines.push(`Forma de pagamento: ${form.faturamentoFormaPagamento || "-"}`);
+    } else {
+      lines.push("Faturamento: Não há valores a faturar (dentro da franquia)");
+    }
+  } else if(conf.faturamento){
     lines.push("");
     if(form.faturamento === "sim"){
       lines.push(`Faturamento: Sim - R$ ${form.faturamentoValor.trim() || "0,00"} em ${form.faturamentoParcelas}x`);
@@ -490,12 +610,23 @@ function validate(f){
   if(!f.tecnico.trim()) missing.push("tecnico");
   if(!f.cliente.trim()) missing.push("cliente");
   if(!f.endereco.trim()) missing.push("endereco");
+
   if(conf.caixa){
-    if(!f.caixa.trim()) missing.push("caixa");
-    if(!f.porta.trim()) missing.push("porta");
-    if(!f.potencia.trim()) missing.push("potencia");
+    const req = conf.caixaRequiredFields || ["caixa","porta","potencia"];
+    if(req.includes("caixa") && !f.caixa.trim()) missing.push("caixa");
+    if(req.includes("porta") && !f.porta.trim()) missing.push("porta");
+    if(req.includes("potencia") && !f.potencia.trim()) missing.push("potencia");
   }
-  if(conf.servico.mode === "livre" && !f.servicoLivre.trim()) missing.push("servicoLivre");
+
+  const mode = conf.servico.mode;
+  if(mode === "livre" && !f.servicoLivre.trim()) missing.push("servicoLivre");
+  if(mode === "single_select" && !f.servicoEscolha) missing.push("servicoEscolha");
+
+  if(conf.faturamento === "repetidor"){
+    const calc = computeFaturamentoRepetidor(f.subtipo, f.produtos);
+    if(calc.total > 0 && !f.faturamentoFormaPagamento) missing.push("faturamentoFormaPagamento");
+  }
+
   return missing;
 }
 function missingClass(f, field){
@@ -511,6 +642,29 @@ function render(){
   } else {
     renderForm(app);
   }
+}
+
+function renderPatrimoniosUtilizadosCard(f){
+  let html = `<div class="card">
+    <p class="section-title">Patrimônios utilizados</p>
+    <div class="field">
+      <label>Equipamento</label>
+      <select id="selectPatrimonioUtilizado">
+        ${PATRIMONIOS_LIST.map(p => `<option value="${escapeAttr(p)}">${escapeHtml(p)}</option>`).join("")}
+      </select>
+    </div>
+    <button type="button" class="secondary-btn" id="addPatrimonioUtilizadoBtn">+ Adicionar patrimônio</button>`;
+  f.patrimoniosUtilizados.forEach((row,i) => {
+    html += `<div class="dyn-row">
+      <div class="dyn-row-info">
+        <div class="dyn-row-title">[${padNum(i+1)}] ${escapeHtml(row.tipo)}</div>
+        <input type="text" placeholder="MAC" data-role="patrimonioUtilizadoMac" data-index="${i}" value="${escapeAttr(row.mac)}">
+      </div>
+      <button type="button" class="icon-btn-sm" data-role="removePatrimonioUtilizado" data-index="${i}">✕</button>
+    </div>`;
+  });
+  html += `</div>`;
+  return html;
 }
 
 function renderPatrimonioLivreCard(listKey, title){
@@ -531,6 +685,46 @@ function renderPatrimonioLivreCard(listKey, title){
       <button type="button" class="icon-btn-sm" data-role="removePatrimonioLivre" data-list="${listKey}" data-index="${i}">✕</button>
     </div>`;
   });
+  html += `</div>`;
+  return html;
+}
+
+function renderServicoCard(conf, f){
+  let html = `<div class="card"><p class="section-title">Serviço realizado</p>`;
+  const mode = conf.servico.mode;
+  if(mode === "fixo"){
+    html += `<p style="font-size:14px;font-weight:700;margin:0;">${escapeHtml(conf.servico.texto)}</p>`;
+  } else if(mode === "livre"){
+    html += `<div class="field">
+      <label>Descrição ${missingClass(f,"servicoLivre")?'<span class="req">*</span>':''}</label>
+      <textarea rows="3" data-role="servicoLivre" class="${missingClass(f,"servicoLivre")}" placeholder="Descreva o serviço realizado">${escapeHtml(f.servicoLivre)}</textarea>
+    </div>`;
+  } else if(mode === "single_select"){
+    html += `<div class="chip-grid">
+      ${conf.servico.opcoes.map(op => `<button type="button" class="chip full ${f.servicoEscolha===op?"active":""}" data-role="servicoEscolha" data-value="${escapeAttr(op)}">${escapeHtml(op)}</button>`).join("")}
+    </div>`;
+    if(missingClass(f,"servicoEscolha")) html += `<p style="color:var(--danger);font-size:11.5px;margin-top:8px;">Selecione uma opção</p>`;
+  } else if(mode === "teste_velocidade"){
+    html += `<div class="field">
+      <label>Plano do cliente</label>
+      <select data-role="planoCliente">
+        <option value="">Selecione…</option>
+        ${PLANOS_TESTE_VELOCIDADE.map(p => `<option value="${p}" ${f.planoCliente===p?"selected":""}>${p}</option>`).join("")}
+      </select>
+    </div>
+    <div class="field">
+      <label>Velocidade atual (teste)</label>
+      <input type="text" inputmode="numeric" data-role="velocidadeAtual" value="${escapeAttr(f.velocidadeAtual)}" placeholder="Ex: 487">
+    </div>
+    <p class="section-title" style="margin-top:18px;">Em serviço</p>`;
+    EM_SERVICO_OPCOES.forEach(op => {
+      const checked = f.emServico.includes(op);
+      html += `<div class="checkbox-row ${checked?"checked":""}" data-role="emServico" data-value="${escapeAttr(op)}">
+        <span class="checkbox-box">${checked?"✓":""}</span>
+        <span class="checkbox-text">${escapeHtml(op)}</span>
+      </div>`;
+    });
+  }
   html += `</div>`;
   return html;
 }
@@ -594,15 +788,14 @@ function renderForm(app){
   // DADOS DO ATENDIMENTO
   html += `<div class="card">
     <p class="section-title">Dados do atendimento</p>
-    <div class="row-2">
-      <div class="field">
-        <label>Técnico ${missingClass(f,"tecnico")?'<span class="req">*</span>':''}</label>
-        <input type="text" data-role="tecnico" value="${escapeAttr(f.tecnico)}" class="${missingClass(f,"tecnico")}" placeholder="Seu nome">
-      </div>
-      <div class="field">
-        <label>Data</label>
-        <input type="date" data-role="data" value="${escapeAttr(f.data)}">
-      </div>
+    <div class="field">
+      <label>Técnico ${missingClass(f,"tecnico")?'<span class="req">*</span>':''}</label>
+      <input type="text" data-role="tecnico" value="${escapeAttr(f.tecnico)}" class="${missingClass(f,"tecnico")}" placeholder="Seu nome">
+      <button type="button" class="secondary-btn" id="trocarTecnicoBtn" style="margin-top:8px;">✏️ Alterar técnico</button>
+    </div>
+    <div class="field">
+      <label>Data</label>
+      <input type="date" data-role="data" value="${escapeAttr(f.data)}">
     </div>
   </div>`;
 
@@ -646,17 +839,43 @@ function renderForm(app){
   }
 
   // SERVIÇO REALIZADO
-  html += `<div class="card">
-    <p class="section-title">Serviço realizado</p>`;
-  if(conf.servico.mode === "fixo"){
-    html += `<p style="font-size:14px;font-weight:700;margin:0;">${escapeHtml(conf.servico.texto)}</p>`;
-  } else {
-    html += `<div class="field">
-      <label>Descrição ${missingClass(f,"servicoLivre")?'<span class="req">*</span>':''}</label>
-      <textarea rows="3" data-role="servicoLivre" class="${missingClass(f,"servicoLivre")}" placeholder="Descreva o serviço realizado">${escapeHtml(f.servicoLivre)}</textarea>
+  html += renderServicoCard(conf, f);
+
+  // EXTRAS DE REATIVAÇÃO
+  if(f.grupo === "Reativação"){
+    html += `<div class="card">
+      <p class="section-title">Equipamentos</p>
+      <div class="checkbox-row ${f.equipamentosResidenciaAtivo?"checked":""}" data-role="toggleEquipResidencia">
+        <span class="checkbox-box">${f.equipamentosResidenciaAtivo?"✓":""}</span>
+        <span class="checkbox-text">Equipamentos na Residência</span>
+      </div>
+      <div class="checkbox-row ${f.equipRecolhidoAtivo?"checked":""}" data-role="toggleEquipRecolhido">
+        <span class="checkbox-box">${f.equipRecolhidoAtivo?"✓":""}</span>
+        <span class="checkbox-text">Equipamentos Recolhidos</span>
+      </div>
     </div>`;
+
+    if(f.equipamentosResidenciaAtivo){
+      html += `<div class="card">
+        <p class="section-title">Equipamentos na residência</p>
+        <div class="row-3">
+          <div class="field"><label>Modelo</label><input type="text" id="inputEquipResidenciaModelo" placeholder="Modelo"></div>
+          <div class="field"><label>Tipo</label><input type="text" id="inputEquipResidenciaTipo" placeholder="Ex: ONT"></div>
+          <div class="field"><label>MAC</label><input type="text" id="inputEquipResidenciaMac" placeholder="MAC"></div>
+        </div>
+        <button type="button" class="secondary-btn" id="addEquipResidenciaBtn">+ Adicionar equipamento</button>`;
+      f.equipamentosResidencia.forEach((row,i) => {
+        html += `<div class="dyn-row">
+          <div class="dyn-row-info">
+            <div class="dyn-row-title">[${padNum(i+1)}] ${escapeHtml(row.modelo)} — ${escapeHtml(row.tipo)}</div>
+            <div style="font-size:12px;color:var(--text-muted);">MAC: ${escapeHtml(row.mac || "-")}</div>
+          </div>
+          <button type="button" class="icon-btn-sm" data-role="removeEquipResidencia" data-index="${i}">✕</button>
+        </div>`;
+      });
+      html += `</div>`;
+    }
   }
-  html += `</div>`;
 
   // PRODUTOS UTILIZADOS
   if(conf.produtos){
@@ -685,25 +904,10 @@ function renderForm(app){
 
   // PATRIMÔNIOS UTILIZADOS
   if(conf.patrimoniosUtilizados){
-    html += `<div class="card">
-      <p class="section-title">Patrimônios utilizados</p>
-      <div class="field">
-        <label>Equipamento</label>
-        <select id="selectPatrimonioUtilizado">
-          ${PATRIMONIOS_LIST.map(p => `<option value="${escapeAttr(p)}">${escapeHtml(p)}</option>`).join("")}
-        </select>
-      </div>
-      <button type="button" class="secondary-btn" id="addPatrimonioUtilizadoBtn">+ Adicionar patrimônio</button>`;
-    f.patrimoniosUtilizados.forEach((row,i) => {
-      html += `<div class="dyn-row">
-        <div class="dyn-row-info">
-          <div class="dyn-row-title">[${padNum(i+1)}] ${escapeHtml(row.tipo)}</div>
-          <input type="text" placeholder="MAC" data-role="patrimonioUtilizadoMac" data-index="${i}" value="${escapeAttr(row.mac)}">
-        </div>
-        <button type="button" class="icon-btn-sm" data-role="removePatrimonioUtilizado" data-index="${i}">✕</button>
-      </div>`;
-    });
-    html += `</div>`;
+    html += renderPatrimoniosUtilizadosCard(f);
+  }
+  if(f.grupo === "Reativação" && f.equipRecolhidoAtivo){
+    html += renderPatrimoniosUtilizadosCard(f);
   }
 
   // PATRIMÔNIOS RECOLHIDOS / TROCADOS
@@ -715,7 +919,26 @@ function renderForm(app){
   }
 
   // FATURAMENTO
-  if(conf.faturamento){
+  if(conf.faturamento === "repetidor"){
+    const calc = computeFaturamentoRepetidor(f.subtipo, f.produtos);
+    html += `<div class="card"><p class="section-title">Faturamento</p>`;
+    if(calc.total > 0){
+      html += `<div class="info-box">
+        Cabo de Rede: ${calc.metrosCabo}m utilizados${calc.franquia ? ` (30m gratuitos + ${calc.metrosFaturar}m excedente)` : ` (faturamento integral)`}<br>
+        Conectores RJ45: ${calc.qtdRJ45} utilizados${calc.franquia ? ` (2 gratuitos + ${calc.rj45Faturar} excedentes)` : ` (faturamento integral)`}
+      </div>
+      <div class="class-badge pending" style="margin-bottom:14px;">Valor a faturar: R$ ${brl(calc.total)}</div>
+      <div class="field">
+        <label>Forma de pagamento ${missingClass(f,"faturamentoFormaPagamento")?'<span class="req">*</span>':''}</label>
+        <div class="chip-grid">
+          ${["À vista","1x","2x","3x"].map(op => `<button type="button" class="chip ${f.faturamentoFormaPagamento===op?"active":""}" data-role="formaPagamento" data-value="${escapeAttr(op)}">${escapeHtml(op)}</button>`).join("")}
+        </div>
+      </div>`;
+    } else {
+      html += `<p style="font-size:13px;color:var(--text-muted);margin:0;">Cabo: ${calc.metrosCabo}m · RJ45: ${calc.qtdRJ45} — dentro da franquia, nenhum valor a faturar.</p>`;
+    }
+    html += `</div>`;
+  } else if(conf.faturamento){
     html += `<div class="card">
       <p class="section-title">Faturamento</p>
       <div class="chip-grid">
@@ -821,6 +1044,7 @@ function attachFormHandlers(){
   bindInput("porta");
   bindInput("potencia");
   bindInput("servicoLivre");
+  bindInput("velocidadeAtual");
   bindInput("faturamentoValor");
 
   const coordBtn = document.getElementById("capturarCoordBtn");
@@ -836,6 +1060,70 @@ function attachFormHandlers(){
       }
     });
   }
+  const trocarBtn = document.getElementById("trocarTecnicoBtn");
+  if(trocarBtn){
+    trocarBtn.addEventListener("click", () => {
+      const el = document.querySelector('[data-role="tecnico"]');
+      if(el){ el.focus(); el.select(); }
+      showToast("Digite o novo nome do técnico");
+    });
+  }
+
+  // plano do cliente (teste de velocidade)
+  const planoSel = document.querySelector('[data-role="planoCliente"]');
+  if(planoSel){
+    planoSel.addEventListener("change", () => {
+      state.form.planoCliente = planoSel.value;
+      render();
+    });
+  }
+  // em serviço (teste de velocidade)
+  document.querySelectorAll('[data-role="emServico"]').forEach(row => {
+    row.addEventListener("click", () => {
+      const val = row.dataset.value;
+      const idx = state.form.emServico.indexOf(val);
+      if(idx === -1) state.form.emServico.push(val);
+      else state.form.emServico.splice(idx, 1);
+      render();
+    });
+  });
+  // serviço realizado (seleção única)
+  document.querySelectorAll('[data-role="servicoEscolha"]').forEach(btn => {
+    btn.addEventListener("click", () => {
+      state.form.servicoEscolha = btn.dataset.value;
+      render();
+    });
+  });
+
+  // extras de Reativação
+  const togR = document.querySelector('[data-role="toggleEquipResidencia"]');
+  if(togR) togR.addEventListener("click", () => {
+    state.form.equipamentosResidenciaAtivo = !state.form.equipamentosResidenciaAtivo;
+    render();
+  });
+  const togP = document.querySelector('[data-role="toggleEquipRecolhido"]');
+  if(togP) togP.addEventListener("click", () => {
+    state.form.equipRecolhidoAtivo = !state.form.equipRecolhidoAtivo;
+    render();
+  });
+  const addER = document.getElementById("addEquipResidenciaBtn");
+  if(addER){
+    addER.addEventListener("click", () => {
+      const modelo = document.getElementById("inputEquipResidenciaModelo").value.trim();
+      const tipo = document.getElementById("inputEquipResidenciaTipo").value.trim();
+      const mac = document.getElementById("inputEquipResidenciaMac").value.trim();
+      if(!modelo){ showToast("Informe o modelo do equipamento"); return; }
+      state.form.equipamentosResidencia.push({ modelo, tipo, mac });
+      render();
+    });
+  }
+  document.querySelectorAll('[data-role="removeEquipResidencia"]').forEach(btn => {
+    btn.addEventListener("click", () => {
+      const idx = parseInt(btn.dataset.index, 10);
+      state.form.equipamentosResidencia.splice(idx, 1);
+      render();
+    });
+  });
 
   // produtos
   document.querySelectorAll('[data-role="produtoToggle"]').forEach(row => {
@@ -924,7 +1212,7 @@ function attachFormHandlers(){
     });
   });
 
-  // faturamento
+  // faturamento genérico
   document.querySelectorAll('[data-role="faturamento"]').forEach(btn => {
     btn.addEventListener("click", () => {
       state.form.faturamento = btn.dataset.value;
@@ -934,6 +1222,13 @@ function attachFormHandlers(){
   document.querySelectorAll('[data-role="parcelas"]').forEach(btn => {
     btn.addEventListener("click", () => {
       state.form.faturamentoParcelas = btn.dataset.value;
+      render();
+    });
+  });
+  // forma de pagamento (faturamento de repetidor)
+  document.querySelectorAll('[data-role="formaPagamento"]').forEach(btn => {
+    btn.addEventListener("click", () => {
+      state.form.faturamentoFormaPagamento = btn.dataset.value;
       render();
     });
   });
@@ -1016,6 +1311,10 @@ function bindInput(role){
       const formatted = formatPotencia(el.value);
       el.value = formatted;
       state.form[role] = formatted;
+    } else if(role === "velocidadeAtual"){
+      const formatted = formatVelocidade(el.value);
+      el.value = formatted;
+      state.form[role] = formatted;
     } else {
       state.form[role] = el.value;
     }
@@ -1031,6 +1330,10 @@ async function generateReport(){
     render();
     showToast("Preencha os campos obrigatórios em vermelho");
     return;
+  }
+  if(GRUPOS_ALERTA_FATURAMENTO.includes(state.form.grupo)){
+    const ok = confirm(ALERTA_FATURAMENTO_MSG);
+    if(!ok) return;
   }
   lastGeneratedText = buildReportText(state.form);
   state.lastTecnico = state.form.tecnico;
