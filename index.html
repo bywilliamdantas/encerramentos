@@ -1,0 +1,1099 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Encerramento">
+<meta name="theme-color" content="#000000">
+<meta name="description" content="Preencha os atendimentos e gere relatórios de encerramento prontos para copiar no WhatsApp.">
+<title>Gerenciador de Encerramento</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
+<style>
+  :root{
+    --bg:#000000;
+    --card-top:#1b1b1b;
+    --card-bottom:#0a0a0a;
+    --card-border:rgba(255,255,255,0.06);
+    --text-primary:#f5f5f5;
+    --text-muted:#6b6b6b;
+    --text-label:#8a8a8a;
+    --danger:#ff453a;
+    --ok:#30d158;
+    --accent:#ff5a1f;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{
+    margin:0;padding:0;
+    background:var(--bg);
+    min-height:100vh;
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display",system-ui,sans-serif;
+    color:var(--text-primary);
+    display:flex;justify-content:center;
+    padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom) 0;
+  }
+  .screen{ width:100%; max-width:430px; padding:20px 18px 50px; }
+
+  .page-title{ font-size:22px; font-weight:800; margin:6px 4px 4px; }
+  .page-sub{ font-size:12.5px; color:var(--text-muted); margin:0 4px 18px; }
+
+  .sync-row{
+    display:flex; align-items:center; gap:6px;
+    font-size:11px; color:var(--text-muted);
+    padding:0 6px 10px; min-height:16px;
+  }
+  .sync-dot{ width:6px;height:6px;border-radius:50%; background:var(--text-muted); flex-shrink:0; }
+  .sync-dot.ok{background:var(--ok);}
+  .sync-dot.err{background:var(--danger);}
+  .sync-row.hidden{visibility:hidden;}
+
+  .card{
+    background:linear-gradient(165deg,var(--card-top),var(--card-bottom) 70%);
+    border:1px solid var(--card-border);
+    border-radius:22px;
+    padding:20px 20px 22px;
+    box-shadow:0 16px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
+    margin-bottom:16px;
+  }
+  .section-title{
+    font-size:12px; font-weight:700; letter-spacing:0.06em;
+    color:var(--text-label); text-transform:uppercase;
+    margin:0 0 14px;
+  }
+
+  .chip-grid{ display:flex; flex-wrap:wrap; gap:8px; }
+  .chip{
+    flex:1 1 calc(50% - 8px);
+    background:rgba(255,255,255,0.04);
+    border:1px solid rgba(255,255,255,0.08);
+    color:var(--text-label);
+    font-size:12.5px; font-weight:700;
+    padding:14px 8px; border-radius:14px;
+    text-align:center; -webkit-appearance:none;
+    font-family:inherit;
+  }
+  .chip.active{
+    background:rgba(255,90,31,0.14);
+    border-color:var(--accent);
+    color:var(--accent);
+  }
+  .chip:active{ transform:scale(0.97); }
+
+  .field{ margin-bottom:14px; }
+  .field:last-child{ margin-bottom:0; }
+  .field label{
+    display:block; font-size:11.5px; font-weight:600;
+    color:var(--text-label); margin-bottom:6px; letter-spacing:0.02em;
+  }
+  .field label .req{ color:var(--accent); margin-left:2px; }
+  .field input, .field textarea{
+    width:100%; background:rgba(255,255,255,0.05);
+    border:1px solid rgba(255,255,255,0.08);
+    color:var(--text-primary); border-radius:12px;
+    padding:12px 13px; font-size:14.5px;
+    -webkit-appearance:none; font-family:inherit;
+  }
+  .field select{
+    width:100%; background:rgba(255,255,255,0.05);
+    border:1px solid rgba(255,255,255,0.08);
+    color:var(--text-primary); border-radius:12px;
+    padding:12px 13px; font-size:14.5px;
+    font-family:inherit;
+  }
+  .field input:focus, .field textarea:focus, .field select:focus{
+    outline:none; border-color:var(--accent);
+  }
+  .field input.invalid, .field textarea.invalid{ border-color:var(--danger); }
+  .row-2{ display:flex; gap:10px; }
+  .row-2 .field{ flex:1; }
+  .row-3{ display:flex; gap:10px; }
+  .row-3 .field{ flex:1; }
+
+  .checkbox-row{
+    display:flex; align-items:flex-start; gap:10px;
+    padding:10px 2px; cursor:pointer;
+  }
+  .checkbox-box{
+    width:20px;height:20px;border-radius:6px; flex-shrink:0; margin-top:1px;
+    border:1.5px solid rgba(255,255,255,0.22);
+    display:flex;align-items:center;justify-content:center;
+    font-size:12px; font-weight:800; color:#0a0a0a;
+    transition:background .12s ease, border-color .12s ease;
+  }
+  .checkbox-row.checked .checkbox-box{ background:var(--accent); border-color:var(--accent); }
+  .checkbox-text{ font-size:13.5px; line-height:1.35; }
+
+  .primary-btn{
+    width:100%; border:none; border-radius:16px;
+    padding:16px; font-size:15px; font-weight:700;
+    background:var(--accent); color:#0a0a0a;
+    -webkit-appearance:none; font-family:inherit;
+  }
+  .primary-btn:active{ transform:scale(0.98); }
+  .secondary-btn{
+    width:100%; border:1px solid rgba(255,255,255,0.1); border-radius:16px;
+    padding:14px; font-size:13.5px; font-weight:600;
+    background:rgba(255,255,255,0.05); color:var(--text-label);
+    -webkit-appearance:none; margin-top:10px; font-family:inherit;
+  }
+  .secondary-btn:active{ background:rgba(255,255,255,0.1); }
+
+  .dyn-row{
+    display:flex; align-items:center; gap:10px;
+    padding:12px 2px; border-top:1px solid rgba(255,255,255,0.06);
+  }
+  .dyn-row-info{ flex:1; min-width:0; }
+  .dyn-row-title{ font-size:12.5px; font-weight:700; margin-bottom:6px; }
+  .dyn-row-info input{
+    width:100%; background:rgba(255,255,255,0.05);
+    border:1px solid rgba(255,255,255,0.08);
+    color:var(--text-primary); border-radius:10px;
+    padding:9px 11px; font-size:13px; font-family:inherit;
+    -webkit-appearance:none;
+  }
+
+  .class-badge{
+    margin-top:6px; padding:13px 14px; border-radius:16px;
+    font-size:12.5px; font-weight:700; text-align:center;
+  }
+  .class-badge.ok{
+    background:rgba(48,209,88,0.12); color:var(--ok);
+    border:1px solid rgba(48,209,88,0.3);
+  }
+  .class-badge.pending{
+    background:rgba(255,90,31,0.12); color:var(--accent);
+    border:1px solid rgba(255,90,31,0.3);
+  }
+
+  .report-box{
+    background:#050505; border:1px solid rgba(255,255,255,0.08);
+    border-radius:14px; padding:14px; font-size:12.5px;
+    white-space:pre-wrap; word-break:break-word;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    color:#d8d8d8; line-height:1.5; margin-bottom:14px;
+  }
+
+  .history-item{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:12px 4px; border-bottom:1px solid rgba(255,255,255,0.06);
+    gap:10px;
+  }
+  .history-item:last-child{ border-bottom:none; }
+  .history-info{ min-width:0; }
+  .history-cliente{ font-size:13.5px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .history-meta{ font-size:11px; color:var(--text-muted); margin-top:2px; }
+  .history-actions{ display:flex; gap:6px; flex-shrink:0; }
+  .icon-btn-sm{
+    background:rgba(255,255,255,0.06); border:none; color:var(--text-label);
+    width:30px;height:30px;border-radius:10px; font-size:13px;
+    display:flex;align-items:center;justify-content:center;
+    -webkit-appearance:none; flex-shrink:0;
+  }
+  .icon-btn-sm:active{ background:rgba(255,255,255,0.14); }
+  .empty-hist{ font-size:12.5px; color:var(--text-muted); text-align:center; padding:14px 0; }
+
+  .toast{
+    position:fixed; bottom:24px; left:50%;
+    transform:translateX(-50%) translateY(20px);
+    background:#1c1c1c; border:1px solid rgba(255,255,255,0.1);
+    color:var(--text-primary); font-size:13px; padding:11px 18px;
+    border-radius:14px; opacity:0; pointer-events:none;
+    transition:opacity .25s ease, transform .25s ease;
+    box-shadow:0 10px 30px rgba(0,0,0,0.5);
+    max-width:85vw; text-align:center; z-index:50;
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); pointer-events:auto; }
+
+  .loading{ text-align:center; color:var(--text-muted); font-size:13px; padding:60px 0; }
+</style>
+</head>
+<body>
+<div class="screen">
+  <div class="sync-row hidden" id="syncRow">
+    <span class="sync-dot" id="syncDot"></span>
+    <span id="syncText"></span>
+  </div>
+  <div id="app"><div class="loading">carregando…</div></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const STORAGE_KEY = "gerenciador-encerramento-data";
+
+// ---------- catálogo de tipos ----------
+const GRUPOS = {
+  "Instalação": { subtipos:["PF","PJ","B2B","Condomínio"], subtipoLabel:"Tipo de cliente", caixa:true, servico:{mode:"fixo", texto:"Instalação Fibra"}, produtos:true, patrimoniosUtilizados:true, patrimoniosRecolhidos:false, patrimoniosTrocados:false, faturamento:true },
+  "Instalação Repetidor": { subtipos:["2.0","3.0","4.0"], subtipoLabel:"Versão do repetidor", caixa:false, servico:{mode:"fixo", texto:"Instalação de Repetidor"}, produtos:true, patrimoniosUtilizados:true, patrimoniosRecolhidos:false, patrimoniosTrocados:false, faturamento:true },
+  "Reativação": { subtipos:["PF","PJ","B2B","Condomínio"], subtipoLabel:"Tipo de cliente", caixa:true, servico:{mode:"fixo", texto:"Instalação Fibra"}, produtos:true, patrimoniosUtilizados:true, patrimoniosRecolhidos:false, patrimoniosTrocados:false, faturamento:true },
+  "Serviço": { subtipos:["PF","PJ","B2B","Condomínio"], subtipoLabel:"Tipo de cliente", caixa:true, servico:{mode:"livre"}, produtos:true, patrimoniosUtilizados:true, patrimoniosRecolhidos:false, patrimoniosTrocados:false, faturamento:true },
+  "Transferência": { subtipos:["PF","PJ","B2B","Condomínio"], subtipoLabel:"Tipo de cliente", caixa:true, servico:{mode:"fixo", texto:"Transferência de Endereço"}, produtos:true, patrimoniosUtilizados:true, patrimoniosRecolhidos:false, patrimoniosTrocados:false, faturamento:true },
+  "Troca de Roteador": { subtipos:["PF","PJ","B2B","Condomínio"], subtipoLabel:"Tipo de cliente", caixa:true, servico:{mode:"fixo", texto:"Troca de Roteador"}, produtos:true, patrimoniosUtilizados:true, patrimoniosRecolhidos:true, patrimoniosTrocados:false, faturamento:true },
+  "Upgrade": { subtipos:["PF","PJ","B2B","Condomínio"], subtipoLabel:"Tipo de cliente", caixa:true, servico:{mode:"fixo", texto:"Upgrade de Plano"}, produtos:true, patrimoniosUtilizados:true, patrimoniosRecolhidos:true, patrimoniosTrocados:false, faturamento:true },
+  "Retrabalho de Instalação": { subtipos:["PF","PJ","B2B","Condomínio"], subtipoLabel:"Tipo de cliente", caixa:true, servico:{mode:"fixo", texto:"Instalação Fibra"}, produtos:true, patrimoniosUtilizados:true, patrimoniosRecolhidos:false, patrimoniosTrocados:false, faturamento:true },
+  "Retrabalho de Pendência": { subtipos:["PF","PJ","B2B","Condomínio"], subtipoLabel:"Tipo de cliente", caixa:true, servico:{mode:"livre"}, produtos:true, patrimoniosUtilizados:true, patrimoniosRecolhidos:false, patrimoniosTrocados:false, faturamento:true },
+  "Equipamento Recolhido": { subtipos:null, subtipoLabel:"", caixa:false, servico:{mode:"fixo", texto:"Recolhimento de Equipamento"}, produtos:false, patrimoniosUtilizados:false, patrimoniosRecolhidos:true, patrimoniosTrocados:false, faturamento:false },
+  "Teste de Velocidade": { subtipos:["PF","PJ","B2B","Condomínio"], subtipoLabel:"Tipo de cliente", caixa:false, servico:{mode:"livre"}, produtos:true, patrimoniosUtilizados:true, patrimoniosRecolhidos:false, patrimoniosTrocados:true, faturamento:false },
+  "Pendência Fibra": { subtipos:["PF","PJ","B2B","Condomínio"], subtipoLabel:"Tipo de cliente", caixa:true, servico:{mode:"livre"}, produtos:true, patrimoniosUtilizados:true, patrimoniosRecolhidos:false, patrimoniosTrocados:false, faturamento:true }
+};
+
+const PRODUTOS_LIST = ["Conector Azul","Conector Verde","Conecto RJ45","Fixa Fio","Esticador F.E","Cabo de Rede","Cabo Drop","Adesivo Conector","Fonte 12v","Canaleta PVC"];
+const CABO_PRODUTOS = ["Cabo de Rede","Cabo Drop"];
+
+const PATRIMONIOS_LIST = ["ONT ZTE V1","ONT ZTE V9","ONT GLOBAL 4 ANTENAS","ONT GLOBAL WI-FI 6","ONT T-LINK","ONT INTELBRAS","ONU APC","ONU MINI","ROTEADOR MERCUSYS 4 ANTENAS","ROTEADOR T-LINK 2 ANTENAS","ROTEADOR T-LINK 3 ANTENAS","ROTEADOR TENDA F3"];
+
+function emptyForm(){
+  return {
+    grupo: "",
+    subtipo: "",
+    tecnico: "",
+    data: todayISO(),
+    cliente: "",
+    endereco: "",
+    coordenadas: "",
+    caixa: "",
+    porta: "",
+    potencia: "",
+    servicoLivre: "",
+    produtos: [],
+    patrimoniosUtilizados: [],
+    patrimoniosRecolhidos: [],
+    patrimoniosTrocados: [],
+    faturamento: null,
+    faturamentoValor: "",
+    faturamentoParcelas: "1"
+  };
+}
+
+function todayISO(){
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+function formatDateBR(iso){
+  if(!iso) return "";
+  const [y,m,d] = iso.split("-");
+  return `${d}/${m}/${y}`;
+}
+function nowTimeHHMM(){
+  const d = new Date();
+  return `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+}
+function formatPotencia(val){
+  if(val === null || val === undefined) return "";
+  let cleaned = String(val).replace(/-/g, "");
+  cleaned = cleaned.replace(/[^0-9.,]/g, "");
+  if(!cleaned) return "";
+  return "-" + cleaned;
+}
+function padNum(n){
+  n = parseInt(n, 10);
+  if(isNaN(n)) n = 0;
+  return String(n).padStart(2, "0");
+}
+
+let state = {
+  lastTecnico: "",
+  form: emptyForm(),
+  history: [],
+  view: "form"
+};
+let lastGeneratedText = "";
+
+// ---------- storage ----------
+function storageAvailable(){
+  try{
+    window.localStorage.setItem("__t__","1");
+    window.localStorage.removeItem("__t__");
+    return true;
+  }catch(e){ return false; }
+}
+async function withRetry(fn, attempts=3, baseDelay=250){
+  let lastErr;
+  for(let i=0;i<attempts;i++){
+    try{ return fn(); }
+    catch(e){ lastErr=e; if(i<attempts-1) await new Promise(r=>setTimeout(r, baseDelay*Math.pow(2,i))); }
+  }
+  throw lastErr;
+}
+async function loadData(){
+  try{
+    const raw = await withRetry(() => window.localStorage.getItem(STORAGE_KEY));
+    if(raw){
+      const parsed = JSON.parse(raw);
+      if(parsed && typeof parsed === "object"){
+        state.lastTecnico = parsed.lastTecnico || "";
+        state.history = Array.isArray(parsed.history) ? parsed.history : [];
+        state.form = emptyForm();
+        state.form.tecnico = state.lastTecnico;
+      }
+    } else {
+      state.form = emptyForm();
+    }
+  }catch(e){
+    state.form = emptyForm();
+  }
+}
+async function persist(){
+  updateSyncUI("busy");
+  try{
+    await withRetry(() => window.localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      lastTecnico: state.lastTecnico,
+      history: state.history
+    })));
+    updateSyncUI("ok");
+  }catch(e){
+    updateSyncUI("err");
+  }
+}
+function updateSyncUI(s){
+  const row = document.getElementById("syncRow");
+  const dot = document.getElementById("syncDot");
+  const text = document.getElementById("syncText");
+  dot.className = "sync-dot";
+  if(s === "busy"){ row.classList.remove("hidden"); dot.classList.add("ok"); text.textContent = "salvando…"; }
+  else if(s === "ok"){ dot.classList.add("ok"); text.textContent = "salvo"; setTimeout(()=>row.classList.add("hidden"),1000); }
+  else if(s === "err"){ row.classList.remove("hidden"); dot.classList.add("err"); text.textContent = "falha ao salvar"; }
+}
+
+let toastTimer;
+function showToast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 2300);
+}
+
+// ---------- classificação ----------
+function computeClassificacao(conf, f){
+  if(!conf) return "Andamento";
+  if(!f.tecnico.trim() || !f.data || !f.cliente.trim() || !f.endereco.trim()) return "Andamento";
+  if(conf.subtipos && !f.subtipo) return "Andamento";
+  if(conf.caixa && (!f.caixa.trim() || !f.porta.trim() || !f.potencia.trim())) return "Andamento";
+  if(conf.servico.mode === "livre" && !f.servicoLivre.trim()) return "Andamento";
+  if(conf.produtos && f.produtos.length === 0) return "Andamento";
+  if(conf.patrimoniosUtilizados && f.patrimoniosUtilizados.length === 0) return "Andamento";
+  if(conf.patrimoniosRecolhidos && f.patrimoniosRecolhidos.length === 0) return "Andamento";
+  if(conf.patrimoniosTrocados && f.patrimoniosTrocados.length === 0) return "Andamento";
+  if(conf.faturamento){
+    if(!f.faturamento) return "Andamento";
+    if(f.faturamento === "sim" && !f.faturamentoValor.trim()) return "Andamento";
+  }
+  return "Encerramento";
+}
+
+// ---------- texto do relatório ----------
+function buildReportText(form){
+  const conf = GRUPOS[form.grupo];
+  const lines = [];
+  const titulo = form.subtipo ? `${form.grupo.toUpperCase()} ${form.subtipo.toUpperCase()}` : form.grupo.toUpperCase();
+  lines.push(titulo);
+  lines.push(`Técnico: ${form.tecnico}`);
+  lines.push(`Data: ${formatDateBR(form.data)} ${nowTimeHHMM()}`);
+  lines.push("");
+  lines.push(`Cliente: ${form.cliente}`);
+  lines.push(`Endereço: ${form.endereco}`);
+  if(form.coordenadas) lines.push(`Coordenadas: ${form.coordenadas}`);
+
+  if(conf.caixa){
+    lines.push("");
+    lines.push(`Caixa: ${form.caixa}`);
+    lines.push(`Porta: ${form.porta}`);
+    lines.push(`Potência: ${form.potencia}`);
+  }
+
+  lines.push("");
+  lines.push("Serviço Realizado:");
+  lines.push(conf.servico.mode === "fixo" ? conf.servico.texto : (form.servicoLivre.trim() || "-"));
+
+  if(conf.produtos){
+    lines.push("");
+    lines.push("Produtos Utilizados:");
+    if(form.produtos.length){
+      form.produtos.forEach(p => {
+        if(CABO_PRODUTOS.includes(p.produto)){
+          const ini = parseFloat(String(p.inicio).replace(",", ".")) || 0;
+          const fim = parseFloat(String(p.fim).replace(",", ".")) || 0;
+          const total = Math.round(Math.abs(ini - fim) * 100) / 100;
+          lines.push(`[${total}m] ${p.produto} (Início: ${ini}m | Fim: ${fim}m | Total: ${total}m)`);
+        } else {
+          lines.push(`[${padNum(p.qtd)}] ${p.produto}`);
+        }
+      });
+    } else {
+      lines.push("-");
+    }
+  }
+
+  if(conf.patrimoniosUtilizados){
+    lines.push("");
+    lines.push("Patrimônios Utilizados:");
+    if(form.patrimoniosUtilizados.length){
+      form.patrimoniosUtilizados.forEach((r,i) => lines.push(`[${padNum(i+1)}] ${r.tipo} - MAC: ${r.mac.trim() || "-"}`));
+    } else {
+      lines.push("-");
+    }
+  }
+
+  if(conf.patrimoniosRecolhidos){
+    lines.push("");
+    lines.push("Patrimônios Recolhidos:");
+    if(form.patrimoniosRecolhidos.length){
+      form.patrimoniosRecolhidos.forEach((r,i) => lines.push(`[${padNum(i+1)}] ${r.equipamento} - MAC: ${r.mac.trim() || "-"}`));
+    } else {
+      lines.push("-");
+    }
+  }
+
+  if(conf.patrimoniosTrocados){
+    lines.push("");
+    lines.push("Patrimônios Trocados:");
+    if(form.patrimoniosTrocados.length){
+      form.patrimoniosTrocados.forEach((r,i) => lines.push(`[${padNum(i+1)}] ${r.equipamento} - MAC: ${r.mac.trim() || "-"}`));
+    } else {
+      lines.push("-");
+    }
+  }
+
+  if(conf.faturamento){
+    lines.push("");
+    if(form.faturamento === "sim"){
+      lines.push(`Faturamento: Sim - R$ ${form.faturamentoValor.trim() || "0,00"} em ${form.faturamentoParcelas}x`);
+    } else if(form.faturamento === "nao"){
+      lines.push("Faturamento: Não");
+    } else {
+      lines.push("Faturamento: -");
+    }
+  }
+
+  lines.push("");
+  lines.push(`Classificação: ${computeClassificacao(conf, form)}`);
+
+  return lines.join("\n");
+}
+
+// ---------- validação ----------
+function formReady(f){
+  const conf = GRUPOS[f.grupo];
+  if(!conf) return false;
+  if(conf.subtipos && !f.subtipo) return false;
+  return true;
+}
+function validate(f){
+  const conf = GRUPOS[f.grupo];
+  const missing = [];
+  if(!conf){ missing.push("grupo"); return missing; }
+  if(conf.subtipos && !f.subtipo) missing.push("subtipo");
+  if(!f.tecnico.trim()) missing.push("tecnico");
+  if(!f.cliente.trim()) missing.push("cliente");
+  if(!f.endereco.trim()) missing.push("endereco");
+  if(conf.caixa){
+    if(!f.caixa.trim()) missing.push("caixa");
+    if(!f.porta.trim()) missing.push("porta");
+    if(!f.potencia.trim()) missing.push("potencia");
+  }
+  if(conf.servico.mode === "livre" && !f.servicoLivre.trim()) missing.push("servicoLivre");
+  return missing;
+}
+function missingClass(f, field){
+  const missing = validate(f);
+  return missing.includes(field) ? "invalid" : "";
+}
+
+// ---------- rendering ----------
+function render(){
+  const app = document.getElementById("app");
+  if(state.view === "result"){
+    renderResult(app);
+  } else {
+    renderForm(app);
+  }
+}
+
+function renderPatrimonioLivreCard(listKey, title){
+  const f = state.form;
+  let html = `<div class="card">
+    <p class="section-title">${escapeHtml(title)}</p>
+    <div class="row-2">
+      <div class="field"><label>Equipamento</label><input type="text" class="patrimonio-livre-equip" data-list="${listKey}" placeholder="Ex: ONT ZTE V1"></div>
+      <div class="field"><label>MAC</label><input type="text" class="patrimonio-livre-mac" data-list="${listKey}" placeholder="MAC"></div>
+    </div>
+    <button type="button" class="secondary-btn" data-role="addPatrimonioLivre" data-list="${listKey}">+ Adicionar</button>`;
+  f[listKey].forEach((row,i) => {
+    html += `<div class="dyn-row">
+      <div class="dyn-row-info">
+        <div class="dyn-row-title">[${padNum(i+1)}] ${escapeHtml(row.equipamento)}</div>
+        <div style="font-size:12px;color:var(--text-muted);">MAC: ${escapeHtml(row.mac || "-")}</div>
+      </div>
+      <button type="button" class="icon-btn-sm" data-role="removePatrimonioLivre" data-list="${listKey}" data-index="${i}">✕</button>
+    </div>`;
+  });
+  html += `</div>`;
+  return html;
+}
+
+function renderHistorySection(){
+  let html = `<p class="section-title" style="margin:24px 4px 12px;">Relatórios recentes</p>
+  <div class="card">
+    ${state.history.length === 0
+      ? `<div class="empty-hist">Nenhum relatório gerado ainda</div>`
+      : state.history.slice(0,10).map(h => `
+        <div class="history-item">
+          <div class="history-info">
+            <div class="history-cliente">${escapeHtml(h.form.cliente || "Sem cliente")}</div>
+            <div class="history-meta">${escapeHtml(h.titulo || "—")} · ${formatDateBR(h.form.data)}</div>
+          </div>
+          <div class="history-actions">
+            <button class="icon-btn-sm" data-role="reuseHist" data-id="${h.id}" title="usar como base">↻</button>
+            <button class="icon-btn-sm" data-role="copyHist" data-id="${h.id}" title="copiar">⧉</button>
+            <button class="icon-btn-sm" data-role="delHist" data-id="${h.id}" title="excluir">✕</button>
+          </div>
+        </div>`).join("")
+    }
+  </div>`;
+  return html;
+}
+
+function renderForm(app){
+  const f = state.form;
+  const conf = GRUPOS[f.grupo] || null;
+  let html = "";
+
+  html += `<h1 class="page-title">Gerenciador de Encerramento</h1>
+  <p class="page-sub">Preencha o atendimento e gere o relatório pronto para o WhatsApp</p>`;
+
+  // TIPO DE ATENDIMENTO
+  html += `<div class="card">
+    <p class="section-title">Tipo de atendimento</p>
+    <div class="field">
+      <label>Categoria</label>
+      <select id="grupoSelect">
+        <option value="">Selecione…</option>
+        ${Object.keys(GRUPOS).map(g => `<option value="${escapeAttr(g)}" ${f.grupo===g?"selected":""}>${escapeHtml(g)}</option>`).join("")}
+      </select>
+    </div>`;
+  if(conf && conf.subtipos){
+    html += `<div class="field">
+      <label>${escapeHtml(conf.subtipoLabel)}</label>
+      <div class="chip-grid">
+        ${conf.subtipos.map(s => `<button type="button" class="chip ${f.subtipo===s?"active":""}" data-role="subtipo" data-value="${escapeAttr(s)}">${escapeHtml(s)}</button>`).join("")}
+      </div>
+    </div>`;
+  }
+  html += `</div>`;
+
+  if(!formReady(f)){
+    app.innerHTML = html;
+    attachTopHandlers();
+    return;
+  }
+
+  // DADOS DO ATENDIMENTO
+  html += `<div class="card">
+    <p class="section-title">Dados do atendimento</p>
+    <div class="row-2">
+      <div class="field">
+        <label>Técnico ${missingClass(f,"tecnico")?'<span class="req">*</span>':''}</label>
+        <input type="text" data-role="tecnico" value="${escapeAttr(f.tecnico)}" class="${missingClass(f,"tecnico")}" placeholder="Seu nome">
+      </div>
+      <div class="field">
+        <label>Data</label>
+        <input type="date" data-role="data" value="${escapeAttr(f.data)}">
+      </div>
+    </div>
+  </div>`;
+
+  // CLIENTE
+  html += `<div class="card">
+    <p class="section-title">Cliente</p>
+    <div class="field">
+      <label>Cliente ${missingClass(f,"cliente")?'<span class="req">*</span>':''}</label>
+      <input type="text" data-role="cliente" value="${escapeAttr(f.cliente)}" class="${missingClass(f,"cliente")}" placeholder="Nome do cliente">
+    </div>
+    <div class="field">
+      <label>Endereço ${missingClass(f,"endereco")?'<span class="req">*</span>':''}</label>
+      <input type="text" data-role="endereco" value="${escapeAttr(f.endereco)}" class="${missingClass(f,"endereco")}" placeholder="Endereço do atendimento">
+    </div>
+    <div class="field">
+      <label>Coordenadas</label>
+      <input type="text" data-role="coordenadas" value="${escapeAttr(f.coordenadas)}" placeholder="-3.876961, -38.481761" inputmode="decimal">
+      <button type="button" class="secondary-btn" id="capturarCoordBtn" style="margin-top:8px;">📍 Capturar coordenadas</button>
+    </div>
+  </div>`;
+
+  // DADOS TÉCNICOS
+  if(conf.caixa){
+    html += `<div class="card">
+      <p class="section-title">Dados técnicos</p>
+      <div class="field">
+        <label>Caixa ${missingClass(f,"caixa")?'<span class="req">*</span>':''}</label>
+        <input type="text" data-role="caixa" value="${escapeAttr(f.caixa)}" class="${missingClass(f,"caixa")}" placeholder="Identificação da caixa">
+      </div>
+      <div class="row-2">
+        <div class="field">
+          <label>Porta ${missingClass(f,"porta")?'<span class="req">*</span>':''}</label>
+          <input type="text" data-role="porta" value="${escapeAttr(f.porta)}" class="${missingClass(f,"porta")}" placeholder="Nº da porta" inputmode="numeric">
+        </div>
+        <div class="field">
+          <label>Potência ${missingClass(f,"potencia")?'<span class="req">*</span>':''}</label>
+          <input type="text" data-role="potencia" value="${escapeAttr(f.potencia)}" class="${missingClass(f,"potencia")}" placeholder="-20 dBm" inputmode="decimal">
+        </div>
+      </div>
+    </div>`;
+  }
+
+  // SERVIÇO REALIZADO
+  html += `<div class="card">
+    <p class="section-title">Serviço realizado</p>`;
+  if(conf.servico.mode === "fixo"){
+    html += `<p style="font-size:14px;font-weight:700;margin:0;">${escapeHtml(conf.servico.texto)}</p>`;
+  } else {
+    html += `<div class="field">
+      <label>Descrição ${missingClass(f,"servicoLivre")?'<span class="req">*</span>':''}</label>
+      <textarea rows="3" data-role="servicoLivre" class="${missingClass(f,"servicoLivre")}" placeholder="Descreva o serviço realizado">${escapeHtml(f.servicoLivre)}</textarea>
+    </div>`;
+  }
+  html += `</div>`;
+
+  // PRODUTOS UTILIZADOS
+  if(conf.produtos){
+    html += `<div class="card"><p class="section-title">Produtos utilizados</p>`;
+    PRODUTOS_LIST.forEach(p => {
+      const entry = f.produtos.find(x => x.produto === p);
+      const checked = !!entry;
+      const isCabo = CABO_PRODUTOS.includes(p);
+      html += `<div class="checkbox-row ${checked?"checked":""}" data-role="produtoToggle" data-produto="${escapeAttr(p)}">
+        <span class="checkbox-box">${checked?"✓":""}</span>
+        <span class="checkbox-text">${escapeHtml(p)}</span>
+      </div>`;
+      if(checked){
+        if(isCabo){
+          html += `<div class="row-2" style="margin:0 0 14px 30px;">
+            <div class="field"><label>Início (m)</label><input type="number" inputmode="decimal" data-role="produtoInicio" data-produto="${escapeAttr(p)}" value="${escapeAttr(entry.inicio)}"></div>
+            <div class="field"><label>Fim (m)</label><input type="number" inputmode="decimal" data-role="produtoFim" data-produto="${escapeAttr(p)}" value="${escapeAttr(entry.fim)}"></div>
+          </div>`;
+        } else {
+          html += `<div class="field" style="margin:0 0 14px 30px;"><label>Quantidade</label><input type="number" inputmode="numeric" min="1" data-role="produtoQtd" data-produto="${escapeAttr(p)}" value="${escapeAttr(entry.qtd)}"></div>`;
+        }
+      }
+    });
+    html += `</div>`;
+  }
+
+  // PATRIMÔNIOS UTILIZADOS
+  if(conf.patrimoniosUtilizados){
+    html += `<div class="card">
+      <p class="section-title">Patrimônios utilizados</p>
+      <div class="field">
+        <label>Equipamento</label>
+        <select id="selectPatrimonioUtilizado">
+          ${PATRIMONIOS_LIST.map(p => `<option value="${escapeAttr(p)}">${escapeHtml(p)}</option>`).join("")}
+        </select>
+      </div>
+      <button type="button" class="secondary-btn" id="addPatrimonioUtilizadoBtn">+ Adicionar patrimônio</button>`;
+    f.patrimoniosUtilizados.forEach((row,i) => {
+      html += `<div class="dyn-row">
+        <div class="dyn-row-info">
+          <div class="dyn-row-title">[${padNum(i+1)}] ${escapeHtml(row.tipo)}</div>
+          <input type="text" placeholder="MAC" data-role="patrimonioUtilizadoMac" data-index="${i}" value="${escapeAttr(row.mac)}">
+        </div>
+        <button type="button" class="icon-btn-sm" data-role="removePatrimonioUtilizado" data-index="${i}">✕</button>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  // PATRIMÔNIOS RECOLHIDOS / TROCADOS
+  if(conf.patrimoniosRecolhidos){
+    html += renderPatrimonioLivreCard("patrimoniosRecolhidos", "Patrimônios recolhidos");
+  }
+  if(conf.patrimoniosTrocados){
+    html += renderPatrimonioLivreCard("patrimoniosTrocados", "Patrimônios trocados");
+  }
+
+  // FATURAMENTO
+  if(conf.faturamento){
+    html += `<div class="card">
+      <p class="section-title">Faturamento</p>
+      <div class="chip-grid">
+        <button type="button" class="chip ${f.faturamento==='nao'?'active':''}" data-role="faturamento" data-value="nao">Não</button>
+        <button type="button" class="chip ${f.faturamento==='sim'?'active':''}" data-role="faturamento" data-value="sim">Sim</button>
+      </div>`;
+    if(f.faturamento === "sim"){
+      html += `<div class="field" style="margin-top:14px;">
+        <label>Valor (R$)</label>
+        <input type="text" inputmode="decimal" data-role="faturamentoValor" value="${escapeAttr(f.faturamentoValor)}" placeholder="0,00">
+      </div>
+      <div class="field">
+        <label>Parcelamento</label>
+        <div class="chip-grid">
+          ${["1","2","3"].map(n => `<button type="button" class="chip ${f.faturamentoParcelas===n?"active":""}" data-role="parcelas" data-value="${n}">${n}x</button>`).join("")}
+        </div>
+      </div>`;
+    }
+    html += `</div>`;
+  }
+
+  // CLASSIFICAÇÃO
+  const cls = computeClassificacao(conf, f);
+  html += `<div class="class-badge ${cls==="Encerramento"?"ok":"pending"}">Classificação: ${cls}</div>`;
+
+  html += `<button class="primary-btn" id="generateBtn" style="margin-top:16px;">Gerar relatório</button>
+  <button class="secondary-btn" id="clearBtn">Limpar campos</button>`;
+
+  html += renderHistorySection();
+
+  app.innerHTML = html;
+  attachTopHandlers();
+  attachFormHandlers();
+}
+
+function renderResult(app){
+  let html = "";
+  html += `<h1 class="page-title">Relatório gerado</h1>
+  <p class="page-sub">Copie e cole no WhatsApp</p>
+  <div class="card">
+    <div class="report-box">${escapeHtml(lastGeneratedText)}</div>
+    <button class="primary-btn" id="copyBtn">Copiar para o WhatsApp</button>
+    <button class="secondary-btn" id="backToFormBtn">Voltar e editar</button>
+    <button class="secondary-btn" id="newReportBtn">Novo relatório</button>
+  </div>`;
+  app.innerHTML = html;
+
+  document.getElementById("copyBtn").addEventListener("click", copyReport);
+  document.getElementById("backToFormBtn").addEventListener("click", () => {
+    state.view = "form";
+    render();
+  });
+  document.getElementById("newReportBtn").addEventListener("click", async () => {
+    state.form = emptyForm();
+    state.form.tecnico = state.lastTecnico;
+    state.view = "form";
+    render();
+  });
+}
+
+function escapeHtml(s){
+  return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+function escapeAttr(s){ return escapeHtml(s); }
+
+// ---------- handlers de topo (sempre ativos) ----------
+function attachTopHandlers(){
+  const grupoSel = document.getElementById("grupoSelect");
+  if(grupoSel){
+    grupoSel.addEventListener("change", () => {
+      const novo = grupoSel.value;
+      if(novo !== state.form.grupo){
+        const preservar = {
+          tecnico: state.form.tecnico,
+          data: state.form.data,
+          cliente: state.form.cliente,
+          endereco: state.form.endereco,
+          coordenadas: state.form.coordenadas
+        };
+        state.form = emptyForm();
+        Object.assign(state.form, preservar);
+        state.form.grupo = novo;
+      }
+      render();
+    });
+  }
+  document.querySelectorAll('[data-role="subtipo"]').forEach(btn => {
+    btn.addEventListener("click", () => {
+      state.form.subtipo = btn.dataset.value;
+      render();
+    });
+  });
+}
+
+// ---------- handlers do formulário completo ----------
+function attachFormHandlers(){
+  bindInput("tecnico");
+  bindInput("data");
+  bindInput("cliente");
+  bindInput("endereco");
+  bindInput("coordenadas");
+  bindInput("caixa");
+  bindInput("porta");
+  bindInput("potencia");
+  bindInput("servicoLivre");
+  bindInput("faturamentoValor");
+
+  const coordBtn = document.getElementById("capturarCoordBtn");
+  if(coordBtn) coordBtn.addEventListener("click", captureCoordinates);
+
+  const tecnicoEl = document.querySelector('[data-role="tecnico"]');
+  if(tecnicoEl){
+    tecnicoEl.addEventListener("blur", async () => {
+      const val = tecnicoEl.value.trim();
+      if(val && val !== state.lastTecnico){
+        state.lastTecnico = val;
+        await persist();
+      }
+    });
+  }
+
+  // produtos
+  document.querySelectorAll('[data-role="produtoToggle"]').forEach(row => {
+    row.addEventListener("click", () => {
+      const produto = row.dataset.produto;
+      const idx = state.form.produtos.findIndex(x => x.produto === produto);
+      if(idx === -1){
+        if(CABO_PRODUTOS.includes(produto)){
+          state.form.produtos.push({ produto, inicio:"", fim:"" });
+        } else {
+          state.form.produtos.push({ produto, qtd:"1" });
+        }
+      } else {
+        state.form.produtos.splice(idx, 1);
+      }
+      render();
+    });
+  });
+  document.querySelectorAll('[data-role="produtoQtd"]').forEach(el => {
+    el.addEventListener("input", () => {
+      const entry = state.form.produtos.find(x => x.produto === el.dataset.produto);
+      if(entry) entry.qtd = el.value;
+    });
+    el.addEventListener("blur", render);
+  });
+  document.querySelectorAll('[data-role="produtoInicio"]').forEach(el => {
+    el.addEventListener("input", () => {
+      const entry = state.form.produtos.find(x => x.produto === el.dataset.produto);
+      if(entry) entry.inicio = el.value;
+    });
+    el.addEventListener("blur", render);
+  });
+  document.querySelectorAll('[data-role="produtoFim"]').forEach(el => {
+    el.addEventListener("input", () => {
+      const entry = state.form.produtos.find(x => x.produto === el.dataset.produto);
+      if(entry) entry.fim = el.value;
+    });
+    el.addEventListener("blur", render);
+  });
+
+  // patrimônios utilizados (lista fixa)
+  const addPUBtn = document.getElementById("addPatrimonioUtilizadoBtn");
+  if(addPUBtn){
+    addPUBtn.addEventListener("click", () => {
+      const sel = document.getElementById("selectPatrimonioUtilizado");
+      if(!sel) return;
+      state.form.patrimoniosUtilizados.push({ tipo: sel.value, mac: "" });
+      render();
+    });
+  }
+  document.querySelectorAll('[data-role="removePatrimonioUtilizado"]').forEach(btn => {
+    btn.addEventListener("click", () => {
+      const idx = parseInt(btn.dataset.index, 10);
+      state.form.patrimoniosUtilizados.splice(idx, 1);
+      render();
+    });
+  });
+  document.querySelectorAll('[data-role="patrimonioUtilizadoMac"]').forEach(el => {
+    el.addEventListener("input", () => {
+      const idx = parseInt(el.dataset.index, 10);
+      if(state.form.patrimoniosUtilizados[idx]) state.form.patrimoniosUtilizados[idx].mac = el.value;
+    });
+    el.addEventListener("blur", render);
+  });
+
+  // patrimônios recolhidos / trocados (texto livre)
+  document.querySelectorAll('[data-role="addPatrimonioLivre"]').forEach(btn => {
+    btn.addEventListener("click", () => {
+      const listKey = btn.dataset.list;
+      const card = btn.closest(".card");
+      const equipEl = card.querySelector(`.patrimonio-livre-equip[data-list="${listKey}"]`);
+      const macEl = card.querySelector(`.patrimonio-livre-mac[data-list="${listKey}"]`);
+      const equipamento = equipEl.value.trim();
+      const mac = macEl.value.trim();
+      if(!equipamento){ showToast("Informe o equipamento"); return; }
+      state.form[listKey].push({ equipamento, mac });
+      render();
+    });
+  });
+  document.querySelectorAll('[data-role="removePatrimonioLivre"]').forEach(btn => {
+    btn.addEventListener("click", () => {
+      const listKey = btn.dataset.list;
+      const idx = parseInt(btn.dataset.index, 10);
+      state.form[listKey].splice(idx, 1);
+      render();
+    });
+  });
+
+  // faturamento
+  document.querySelectorAll('[data-role="faturamento"]').forEach(btn => {
+    btn.addEventListener("click", () => {
+      state.form.faturamento = btn.dataset.value;
+      render();
+    });
+  });
+  document.querySelectorAll('[data-role="parcelas"]').forEach(btn => {
+    btn.addEventListener("click", () => {
+      state.form.faturamentoParcelas = btn.dataset.value;
+      render();
+    });
+  });
+
+  const genBtn = document.getElementById("generateBtn");
+  if(genBtn) genBtn.addEventListener("click", generateReport);
+
+  const clearBtn = document.getElementById("clearBtn");
+  if(clearBtn) clearBtn.addEventListener("click", () => {
+    if(!confirm("Limpar todos os campos preenchidos?")) return;
+    const grupo = state.form.grupo;
+    const subtipo = state.form.subtipo;
+    state.form = emptyForm();
+    state.form.tecnico = state.lastTecnico;
+    state.form.grupo = grupo;
+    state.form.subtipo = subtipo;
+    render();
+  });
+
+  document.querySelectorAll('[data-role="reuseHist"]').forEach(btn => {
+    btn.addEventListener("click", () => {
+      const h = state.history.find(x => x.id === btn.dataset.id);
+      if(!h) return;
+      state.form = { ...emptyForm(), ...h.form, data: todayISO() };
+      window.scrollTo({top:0, behavior:"smooth"});
+      render();
+      showToast("Dados reaproveitados — ajuste o que precisar");
+    });
+  });
+  document.querySelectorAll('[data-role="copyHist"]').forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const h = state.history.find(x => x.id === btn.dataset.id);
+      if(!h) return;
+      await copyTextToClipboard(h.text);
+      showToast("Relatório copiado");
+    });
+  });
+  document.querySelectorAll('[data-role="delHist"]').forEach(btn => {
+    btn.addEventListener("click", async () => {
+      state.history = state.history.filter(x => x.id !== btn.dataset.id);
+      render();
+      await persist();
+    });
+  });
+}
+
+function captureCoordinates(){
+  const btn = document.getElementById("capturarCoordBtn");
+  if(!("geolocation" in navigator)){
+    showToast("Geolocalização não suportada neste dispositivo");
+    return;
+  }
+  const originalText = btn.textContent;
+  btn.textContent = "Capturando…";
+  btn.disabled = true;
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const lat = pos.coords.latitude.toFixed(6);
+      const lng = pos.coords.longitude.toFixed(6);
+      state.form.coordenadas = `${lat}, ${lng}`;
+      render();
+      showToast("Coordenadas capturadas");
+    },
+    (err) => {
+      btn.textContent = originalText;
+      btn.disabled = false;
+      let msg = "Não foi possível capturar as coordenadas";
+      if(err && err.code === 1) msg = "Permissão de localização negada";
+      showToast(msg);
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+  );
+}
+
+function bindInput(role){
+  const el = document.querySelector(`[data-role="${role}"]`);
+  if(!el) return;
+  el.addEventListener("input", () => {
+    if(role === "potencia"){
+      const formatted = formatPotencia(el.value);
+      el.value = formatted;
+      state.form[role] = formatted;
+    } else {
+      state.form[role] = el.value;
+    }
+  });
+  el.addEventListener("blur", () => {
+    render();
+  });
+}
+
+async function generateReport(){
+  const missing = validate(state.form);
+  if(missing.length > 0){
+    render();
+    showToast("Preencha os campos obrigatórios em vermelho");
+    return;
+  }
+  lastGeneratedText = buildReportText(state.form);
+  state.lastTecnico = state.form.tecnico;
+  const titulo = state.form.subtipo ? `${state.form.grupo} ${state.form.subtipo}` : state.form.grupo;
+  const entry = {
+    id: "r" + Date.now(),
+    savedAt: new Date().toISOString(),
+    titulo,
+    form: { ...state.form },
+    text: lastGeneratedText
+  };
+  state.history.unshift(entry);
+  if(state.history.length > 50) state.history = state.history.slice(0,50);
+  state.view = "result";
+  render();
+  await persist();
+  window.scrollTo({top:0, behavior:"smooth"});
+}
+
+async function copyTextToClipboard(text){
+  try{
+    await navigator.clipboard.writeText(text);
+    return true;
+  }catch(e){
+    try{
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      return true;
+    }catch(e2){
+      return false;
+    }
+  }
+}
+
+async function copyReport(){
+  const ok = await copyTextToClipboard(lastGeneratedText);
+  showToast(ok ? "Relatório copiado — cole no WhatsApp" : "Não foi possível copiar automaticamente");
+}
+
+// ---------- init ----------
+(async function init(){
+  if(!storageAvailable()){
+    state.form = emptyForm();
+    render();
+    showToast("Armazenamento indisponível (modo privado?). O histórico não será salvo.");
+  } else {
+    await loadData();
+    render();
+  }
+})();
+
+if("serviceWorker" in navigator){
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
